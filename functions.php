@@ -81,3 +81,46 @@ function pre_print_pre($data, $exit = false)
 *****************************************/
 
 add_filter('wpcf7_autop_or_not', '__return_false');
+
+
+
+/********************************
+ Custom Pagination With Mid Size
+*********************************/
+
+$totalPages   = intval($publicationsQuery->max_num_pages);
+$links = [];
+if ($paged >= 1) {
+    $links[] = $paged;
+}
+if ($paged >= 2) {
+    $links[] = $paged - 1;
+}
+if ($paged >= 3) {
+    $links[] = $paged - 2;
+}
+if (($paged + 2) <= $totalPages) {
+    if ($paged < 3) {
+        $links[] = $paged + 2;
+    }
+    $links[] = $paged + 1;
+}
+sort($links);
+
+if ($paged > 1) {
+    echo '<li class="prev"><a href="' . get_pagenum_link($paged - 1) . '"><i class="fa fas fa-chevron-left" aria-hidden="true"></i><span class="sr-only">Go to Previous Page</span></a></li>';
+}
+foreach ($links as $link) {
+    $activeClass = ($paged == $link) ? 'active' : '';
+    echo '<li class="' . $activeClass . '"><a href="' . get_pagenum_link($link) . '" data-page="' . $link . '">' . $link . '</a></li>';
+}
+if (!in_array($totalPages, $links)) {
+    if (!in_array($totalPages - 1, $links)) {
+        echo '<li class="ellipses-wrapper"><span class="ellipses">…</span></li>' . "\n";
+    }
+    $activeClass = $paged == $totalPages ? ' active' : '';
+    echo '<li class="' . $activeClass . '"><a href="' . get_pagenum_link($totalPages) . '" data-page="' . $totalPages . '">' . $totalPages . '</a></li>';
+}
+if ($paged < $publicationsQuery->max_num_pages) {
+    echo '<li class="next"><a href="' . get_pagenum_link($paged + 1) . '"><i class="fa fas fa-chevron-right" aria-hidden="true"></i><span class="sr-only">Go to Next Page</span></a></li>';
+}

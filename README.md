@@ -9,3 +9,5 @@
 4. Pre Print Pre Function For Debugging
 
 5. Contact Form 7 Auto p Tag Disabled
+
+6. Custom Pagination With Mid Size
