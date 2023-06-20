@@ -11,3 +11,5 @@
 5. Contact Form 7 Auto p Tag Disabled
 
 6. Custom Pagination With Mid Size
+
+7. Custom Structure BreadCrumbs

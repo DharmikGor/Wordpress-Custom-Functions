@@ -124,3 +124,68 @@ if (!in_array($totalPages, $links)) {
 if ($paged < $publicationsQuery->max_num_pages) {
     echo '<li class="next"><a href="' . get_pagenum_link($paged + 1) . '"><i class="fa fas fa-chevron-right" aria-hidden="true"></i><span class="sr-only">Go to Next Page</span></a></li>';
 }
+
+
+
+/****************************
+ Custom Structure BreadCrumbs
+*****************************/
+
+function get_breadcrumb()
+{
+    global $post;
+    $html = '';
+    $breadcrumbItems = [
+        [
+            'url' => home_url(),
+            'title' => 'Home',
+        ]
+    ];
+
+    if (is_category()) {
+        $postCategory = get_the_category($post->ID);
+        foreach ($postCategory as $category) {
+            $breadcrumbItems[] = [
+                'url' => get_permalink($category->term_id),
+                'title' => html_entity_decode($category->name)
+            ];
+        }
+    } elseif (is_page() && get_post_ancestors($post->ID)) {
+        foreach (array_reverse(get_post_ancestors($post->ID)) as $ancestor) {
+            $breadcrumbItems[] = [
+                'url' => get_permalink($ancestor),
+                'title' => html_entity_decode(get_the_title($ancestor))
+            ];
+        }
+    } elseif (!is_front_page() && is_home()) {
+        $breadcrumbItems[] = [
+            'url' => false,
+            'title' => html_entity_decode(get_the_title(get_option('page_for_posts')))
+        ];
+    }
+
+    $breadcrumbItems[] = [
+        'url' => false,
+        'title' => html_entity_decode(get_the_title())
+    ];
+
+
+    if ($breadcrumbItems && is_array($breadcrumbItems) && count($breadcrumbItems) > 0) :
+        $html = '<ol class="breadcrumb">';
+        $counter = 1;
+        foreach ($breadcrumbItems as $item) :
+            $activeClass = ($counter == count($breadcrumbItems)) ? ' active' : '';
+            $html .= '<li class="breadcrumb-item' . $activeClass . '">';
+            if ($item['url']) {
+                $html .= '<a href="' . $item['url'] . '">' . $item['title'] . '</a>';
+            } else {
+                $html .= $item['title'];
+            }
+            $html .= '</li>';
+            $counter++;
+        endforeach;
+        $html .=  '</ol>';
+    endif;
+
+    return $html;
+}
