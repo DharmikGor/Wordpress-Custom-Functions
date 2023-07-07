@@ -30,17 +30,31 @@ add_action('future_to_publish', 'set_default_featured_image');
  Trim Content By Character Count
 **************************************/
 
-function trim_content($excerpt, $maxCharacter = '50', $htmlTag = '')
+function trim_content($excerpt, $maxCharacter = '50', $htmlTag = '', $print = true)
 {
-    if ($htmlTag) {
-        echo '<' . $htmlTag . '>';
-    }
-    if ($excerpt) {
-        echo (strlen(strip_tags($excerpt)) > $maxCharacter) ? substr(strip_tags($excerpt), 0, $maxCharacter) . "..." : substr(strip_tags($excerpt), 0, $maxCharacter);
-    }
-    if ($htmlTag) {
-        echo '</' . $htmlTag . '>';
-    }
+	if($print == true){
+		if ($htmlTag) {
+			echo '<' . $htmlTag . '>';
+		}
+		if ($excerpt) {
+			echo (strlen(strip_tags($excerpt)) > $maxCharacter) ? substr(strip_tags($excerpt), 0, $maxCharacter) . "..." : substr(strip_tags($excerpt), 0, $maxCharacter);
+		}
+		if ($htmlTag) {
+			echo '</' . $htmlTag . '>';
+		}
+	}else{
+		$content = '';
+		if ($htmlTag) {
+			$content .= '<' . $htmlTag . '>';
+		}
+		if ($excerpt) {
+			$content .= (strlen(strip_tags($excerpt)) > $maxCharacter) ? substr(strip_tags($excerpt), 0, $maxCharacter) . "..." : substr(strip_tags($excerpt), 0, $maxCharacter);
+		}
+		if ($htmlTag) {
+			$content .= '</' . $htmlTag . '>';
+		}
+		return $content;
+	}
 }
 
 
