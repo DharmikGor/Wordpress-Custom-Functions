@@ -13,3 +13,5 @@
 6. Custom Pagination With Mid Size
 
 7. Custom Structure BreadCrumbs
+
+8. Dynamic Reading Time

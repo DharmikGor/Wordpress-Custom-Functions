@@ -88,8 +88,8 @@ add_filter('wpcf7_autop_or_not', '__return_false');
  Custom Pagination With Mid Size
 *********************************/
 
-$totalPages   = intval($publicationsQuery->max_num_pages);
-$links = [];
+$totalPages = intval($publicationsQuery->max_num_pages);
+$links      = [];
 if ($paged >= 1) {
     $links[] = $paged;
 }
@@ -134,10 +134,10 @@ if ($paged < $publicationsQuery->max_num_pages) {
 function get_breadcrumb()
 {
     global $post;
-    $html = '';
+    $html            = '';
     $breadcrumbItems = [
         [
-            'url' => home_url(),
+            'url'   => home_url(),
             'title' => 'Home',
         ]
     ];
@@ -146,34 +146,36 @@ function get_breadcrumb()
         $postCategory = get_the_category($post->ID);
         foreach ($postCategory as $category) {
             $breadcrumbItems[] = [
-                'url' => get_permalink($category->term_id),
+                'url'   => get_permalink($category->term_id),
                 'title' => html_entity_decode($category->name)
             ];
         }
     } elseif (is_page() && get_post_ancestors($post->ID)) {
         foreach (array_reverse(get_post_ancestors($post->ID)) as $ancestor) {
             $breadcrumbItems[] = [
-                'url' => get_permalink($ancestor),
+                'url'   => get_permalink($ancestor),
                 'title' => html_entity_decode(get_the_title($ancestor))
             ];
         }
-    } elseif (!is_front_page() && is_home()) {
+    }
+
+    if (!is_front_page() && is_home()) {
         $breadcrumbItems[] = [
-            'url' => false,
+            'url'   => false,
             'title' => html_entity_decode(get_the_title(get_option('page_for_posts')))
+        ];
+    } else {
+        $breadcrumbItems[] = [
+            'url'   => false,
+            'title' => html_entity_decode(get_the_title())
         ];
     }
 
-    $breadcrumbItems[] = [
-        'url' => false,
-        'title' => html_entity_decode(get_the_title())
-    ];
 
-
-    if ($breadcrumbItems && is_array($breadcrumbItems) && count($breadcrumbItems) > 0) :
-        $html = '<ol class="breadcrumb">';
+    if ($breadcrumbItems && is_array($breadcrumbItems) && count($breadcrumbItems) > 0):
+        $html    = '<ol class="breadcrumb">';
         $counter = 1;
-        foreach ($breadcrumbItems as $item) :
+        foreach ($breadcrumbItems as $item):
             $activeClass = ($counter == count($breadcrumbItems)) ? ' active' : '';
             $html .= '<li class="breadcrumb-item' . $activeClass . '">';
             if ($item['url']) {
@@ -184,8 +186,28 @@ function get_breadcrumb()
             $html .= '</li>';
             $counter++;
         endforeach;
-        $html .=  '</ol>';
+        $html .= '</ol>';
     endif;
 
     return $html;
+}
+
+
+
+/****************************
+ Dynamic Reading Time
+*****************************/
+
+function get_reading_time($post_id)
+{
+    $words_per_min = 200; // estimate of how many words someone can read per minute
+    $content       = get_post_field('post_content', $post_id, 'display');
+    $word_count    = str_word_count($content);
+
+    $readingTime = intval(ceil($word_count / $words_per_min));
+
+    return sprintf(
+        '%s min read',
+        $readingTime,
+    );
 }
