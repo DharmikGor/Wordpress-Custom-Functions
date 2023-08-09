@@ -32,29 +32,29 @@ add_action('future_to_publish', 'set_default_featured_image');
 
 function trim_content($excerpt, $maxCharacter = '50', $htmlTag = '', $print = true)
 {
-	if($print == true){
-		if ($htmlTag) {
-			echo '<' . $htmlTag . '>';
-		}
-		if ($excerpt) {
-			echo (strlen(strip_tags($excerpt)) > $maxCharacter) ? substr(strip_tags($excerpt), 0, $maxCharacter) . "..." : substr(strip_tags($excerpt), 0, $maxCharacter);
-		}
-		if ($htmlTag) {
-			echo '</' . $htmlTag . '>';
-		}
-	}else{
-		$content = '';
-		if ($htmlTag) {
-			$content .= '<' . $htmlTag . '>';
-		}
-		if ($excerpt) {
-			$content .= (strlen(strip_tags($excerpt)) > $maxCharacter) ? substr(strip_tags($excerpt), 0, $maxCharacter) . "..." : substr(strip_tags($excerpt), 0, $maxCharacter);
-		}
-		if ($htmlTag) {
-			$content .= '</' . $htmlTag . '>';
-		}
-		return $content;
-	}
+    if ($print == true) {
+        if ($htmlTag) {
+            echo '<' . $htmlTag . '>';
+        }
+        if ($excerpt) {
+            echo (strlen(strip_tags($excerpt)) > $maxCharacter) ? substr(strip_tags($excerpt), 0, $maxCharacter) . "..." : substr(strip_tags($excerpt), 0, $maxCharacter);
+        }
+        if ($htmlTag) {
+            echo '</' . $htmlTag . '>';
+        }
+    } else {
+        $content = '';
+        if ($htmlTag) {
+            $content .= '<' . $htmlTag . '>';
+        }
+        if ($excerpt) {
+            $content .= (strlen(strip_tags($excerpt)) > $maxCharacter) ? substr(strip_tags($excerpt), 0, $maxCharacter) . "..." : substr(strip_tags($excerpt), 0, $maxCharacter);
+        }
+        if ($htmlTag) {
+            $content .= '</' . $htmlTag . '>';
+        }
+        return $content;
+    }
 }
 
 
@@ -225,3 +225,218 @@ function get_reading_time($post_id)
         $readingTime,
     );
 }
+
+
+
+/************************************
+ Set Post View Count For Trending Posts 
+*************************************/
+
+function setPostViews($postID) {
+    $countKey = 'post_views_count';
+    $count = get_post_meta($postID, $countKey, true);
+    if($count==''){
+        $count = 0;
+        delete_post_meta($postID, $countKey);
+        add_post_meta($postID, $countKey, '0');
+    }else{
+        $count++;
+        update_post_meta($postID, $countKey, $count);
+    }
+}
+
+
+
+/************************************
+ Get Youtube Video Thumbnail From Url 
+*************************************/
+
+function get_video_thumbnail($src)
+{
+    $url_pieces = explode('/', $src);
+    if ($url_pieces[2] == 'dai.ly') {
+        $id        = $url_pieces[3];
+        $hash      = json_decode(file_get_contents('//api.dailymotion.com/video/' . $id . '?fields=thumbnail_large_url'), TRUE);
+        $thumbnail = $hash['thumbnail_large_url'];
+    } else if ($url_pieces[2] == 'www.dailymotion.com') {
+        $id        = $url_pieces[4];
+        $hash      = json_decode(file_get_contents('//api.dailymotion.com/video/' . $id . '?fields=thumbnail_large_url'), TRUE);
+        $thumbnail = $hash['thumbnail_large_url'];
+    } else if ($url_pieces[2] == 'vimeo.com') { // If Vimeo
+        $id        = $url_pieces[3];
+        $hash      = unserialize(file_get_contents('//vimeo.com/api/v2/video/' . $id . '.php'));
+        $thumbnail = $hash[0]['thumbnail_large'];
+    } elseif ($url_pieces[2] == 'youtu.be') { // If Youtube
+        $extract_id = explode('?', $url_pieces[3]);
+        $id         = $extract_id[0];
+        $thumbnail  = '//img.youtube.com/vi/' . $id . '/mqdefault.jpg';
+    } else if ($url_pieces[2] == 'player.vimeo.com') { // If Vimeo
+        $id        = $url_pieces[4];
+        $hash      = unserialize(file_get_contents('//vimeo.com/api/v2/video/' . $id . '.php'));
+        $thumbnail = $hash[0]['thumbnail_large'];
+    } elseif ($url_pieces[2] == 'www.youtube.com' && $url_pieces[3] == 'embed') { // If Youtube
+        $extract_id = explode('=', $url_pieces[4]);
+        $id         = $extract_id[0];
+        $thumbnail  = '//img.youtube.com/vi/' . $id . '/mqdefault.jpg';
+    } elseif ($url_pieces[2] == 'www.youtube.com') { // If Youtube
+        $extract_id = explode('=', $url_pieces[3]);
+        $id         = $extract_id[1];
+        $thumbnail  = '//img.youtube.com/vi/' . $id . '/mqdefault.jpg';
+    } else {
+        $thumbnail = $src;
+    }
+    return $thumbnail;
+}
+
+
+
+/********************************************************
+ Posts Render, Pagination, Loader, and WP_Query with AJAX
+*********************************************************/
+
+function renderInsightHtml($postPerPage = 8, $page = 1, $postsType='', $loadMoreButton = 'show') {
+
+	$page = ($page) ? $page : get_query_var('paged');
+
+	$insightArgs = [
+		'post_type'			=> 'insight',
+        'posts_per_page'	=> $postPerPage,
+        'post_status'		=> 'publish',
+        'paged'				=> $page,
+        'orderby'			=> 'date',
+		'order'				=> 'DESC',
+    ];
+
+	$taxQuery = [];
+	
+	if( !empty($postsType) ) {
+		$taxQuery[] = [
+            'taxonomy' => 'insight_type',
+            'field'    => 'term_id',
+            'terms'    => $postsType,
+			'operator' => 'AND'
+        ];
+	}
+
+	if($taxQuery && count($taxQuery) > 0){
+        $insightArgs['tax_query'] = $taxQuery;
+    }
+    $insightQuery = new WP_Query($insightArgs);
+	
+	ob_start();
+	
+	if($insightQuery->max_num_pages == $page || $insightQuery->max_num_pages == 0){
+		$loadMoreButton = 'hide';
+	}
+
+    if ($insightQuery -> have_posts())
+    {	
+		echo '<input type="hidden" class = "post_per_page" value ="'.$postPerPage.'">';
+		echo '<input type="hidden" class = "page_number" value ="'.$page.'">';
+		echo '<input type="hidden" class = "load_more_button_value" value ="'.$loadMoreButton.'">';
+			while($insightQuery->have_posts())
+			{
+				$insightQuery->the_post();
+				set_query_var('insight_post_id', get_the_ID());
+				get_template_part('parts/common/insight-list-card');
+			}
+        wp_reset_postdata();
+    }
+    else
+    {
+        echo '<h3 class="insights-no-found text-white" style=" text-align:center; margin: 82.5px 0;">No Insights Found.</h3>';
+    }
+    $data = ob_get_clean();
+	return $data;
+}
+
+/**
+ * Insight Post Pagination
+ */
+function insight_pagination()
+{
+    $page = (isset($_POST["page"])) ? $_POST["page"] : 1;
+    $loadMoreButton = 'show';
+    $postPerPage = isset($_POST['postPerPage']) ? $_POST['postPerPage'] : 8;
+	$postsType = isset($_POST['insightType']) ? $_POST['insightType'] : '';
+	$data = renderInsightHtml($postPerPage, $page, $postsType, $loadMoreButton);
+    echo json_encode(array('insightHtml' => $data));
+    die();
+}
+
+add_action('wp_ajax_nopriv_insight_pagination', 'insight_pagination');
+add_action('wp_ajax_insight_pagination', 'insight_pagination');
+
+
+function renderGuidesHtml($page = 1)
+{
+
+	$ResourcePageID = get_page_by_title('Resources')->ID;
+	$guiesPostPerPage = (get_field('guides_post_per_page', $ResourcePageID)) ? get_field('guides_post_per_page', $ResourcePageID) : 6;
+
+	$GuidesArgs = [
+		'post_type'			=> 'guide',
+		'posts_per_page'	=> $guiesPostPerPage,
+		'post_status'		=> 'publish',
+		'orderby' 			=> 'date',
+		'order' 			=> 'DESC',
+		'paged'				=> $page,
+		'suppress_filters' => true
+	];
+
+	$GuidesQuery = new WP_Query($GuidesArgs);
+
+	ob_start();
+
+	if ($GuidesQuery->have_posts()) {
+		echo '<div class="custom-grid-layout">';
+		while ($GuidesQuery->have_posts()) {
+			$GuidesQuery->the_post(); ?>
+			<div class="remove-guide-list">
+				<div class="guides__box">
+					<img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), '247x289'); ?>" alt="guide-featured-image">
+					<a href="<?php echo get_the_permalink(get_the_ID()) ?>">
+						<?php if(strlen(get_the_title(get_the_ID())) > 65 ){
+							echo '<h3>'.substr(get_the_title(get_the_ID()), 0, 65).'...</h3>';
+						}else{
+							echo '<h3>'.substr(get_the_title(get_the_ID()), 0, 65).'</h3>';
+						} ?>
+					</a>
+					<a href="<?php echo get_the_permalink(get_the_ID()) ?>" class="btn">Download</a>
+				</div>
+			</div>
+		<?php
+		}
+		echo '</div>';
+		echo '<div class="guides-list-loader" style="display:none; text-align: center;"><img src="'.get_template_directory_uri().'/assets/images/Infinity-loder.svg" alt=""></div>';
+		if ($GuidesQuery->max_num_pages > 1) { ?>
+			<ul class="guides-pagination-group">
+				<?php for ($i = 1; $i <= $GuidesQuery->max_num_pages; $i++) {
+					$activeClass = $i == $page ? 'active' : '';
+					echo '<li class="guides-pagination ' . $activeClass . '"><a href="javascript:void(0)" data-page="' . $i . '">' . $i . '</a></li>';
+				} ?>
+			</ul>
+		<?php
+		}
+		wp_reset_postdata();
+	} else {
+		echo '<h3 class="guides-no-found" style=" text-align:center; padding: 82.5px 0;">No Guides Found.</h3>';
+		echo '<div class="guides-list-loader" style="display:none; text-align: center;"><img src="' . get_template_directory_uri() . '/assets/images/Infinity-loder.svg" alt=""></div>';
+	}
+	$data = ob_get_clean();
+	return $data;
+}
+
+/**
+ * Guides Pagination
+ */
+function guides_pagination()
+{
+	$page = (isset($_POST["page"])) ? $_POST["page"] : 1;
+	$data = renderGuidesHtml($page);
+	echo json_encode(array('guidesHtml' => $data));
+	die();
+}
+
+add_action('wp_ajax_nopriv_guides_pagination', 'guides_pagination');
+add_action('wp_ajax_guides_pagination', 'guides_pagination');

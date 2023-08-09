@@ -15,3 +15,9 @@
 7. Custom Structure BreadCrumbs
 
 8. Dynamic Reading Time
+
+9. Set Post View Count For Trending Posts 
+
+10. Get Youtube Video Thumbnail From Url 
+
+11. Posts Render, Pagination, Loader, and WP_Query with AJAX
