@@ -20,4 +20,6 @@
 
 10. Get Youtube Video Thumbnail From Url 
 
-11. Posts Render, Pagination, Loader, and WP_Query with AJAX
+11. Add a custom link to the end of a specific menu that uses the wp_nav_menu() function 
+
+12. Posts Render, Pagination, Loader, and WP_Query with AJAX
