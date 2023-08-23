@@ -22,4 +22,9 @@
 
 11. Add a custom link to the end of a specific menu that uses the wp_nav_menu() function 
 
-12. Posts Render, Pagination, Loader, and WP_Query with AJAX
+
+
+
+# Wordpress Template Functions.
+
+1. Posts Render, Pagination, Loader, and WP_Query with AJAX

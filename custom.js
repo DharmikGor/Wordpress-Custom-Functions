@@ -2,69 +2,34 @@
  Load More Insight Buttons JS Start
 ***********************************/
 
-$(document).on('click', '.load-more-insight-button', function (event) {
-    event.preventDefault();
-    var page = parseInt($('.page_number').val());
-    currentPage = page+1;
-    triggerInsightPostDisplay();
-});
-
-function triggerInsightPostDisplay() {
-    var postPerPage = $('.post_per_page').val();
-    var loadMoreButtonValue = $('.load_more_button_value').val();
-    var page = parseInt($('.page_number').val());
-    var insightTypeTermID = $('.insight_type:checkbox:checked').map(function() {
-        return this.value;
-    }).get();
-
+$(document).on("click", ".work.load-more-button", function () {
+    var page = parseInt($(".page_number").val());
+    var taxnomy_slug = $(".taxnomy_slug").val();
+    currentPage = page + 1;
+    var loadMoreButtonValue = $(".load_more_button_value").val();
+    
+    $(".work-no-found").remove();
     $(".page_number").remove();
     $(".load_more_button_value").remove();
-    $(".insights-no-found").remove();
-
-    $(".insight-list-loader").show();
-    $(".load-more-button").hide();
-
-    if(insightTypeTermID.length == 0 ){
-        $('.clear-box').hide();
-    }else{
-        $('.clear-box').show();
-    }
+    $(".load-more-button").remove();
+    $(".work-list-loader").show();
 
     $.ajax({
         type: "POST",
         url: localize_data.admin_ajax_url,
         data: {
-            action: "insight_pagination",
-            postPerPage: postPerPage,
-            loadMoreButton: loadMoreButtonValue,
+            action: "works_pagination",
+            taxnomy_slug: taxnomy_slug,
             page: currentPage,
-            insightType : insightTypeTermID,
         },
-        success: function(response){
+        success: function (response) {
             response = JSON.parse(response);
-            $('.grid').show();
-            $('.show_insights').append(response.insightHtml);
-            $('.page_number').val(currentPage);
-            $(".insight-list-loader").hide();
-            showHideInsightLoadMoreButton()
-            if($('.grid').length > 0){
-                $('.grid').masonry('reloadItems');
-                $('.grid').masonry( 'layout' );
-            }
-        }
-    })
-}
-
-showHideInsightLoadMoreButton();
-function showHideInsightLoadMoreButton(){
-    if('show' == $('.load_more_button_value').val()){
-        $(".load-more-button").show();
-    }else{
-        $(".load-more-button").hide();
-    }
-}
-
-
+            $(".page_number").val(currentPage);
+            $(".work-list-loader").remove();
+            $(".show_work").append(response.workHtml);
+        },
+    });
+});
 
 /*************************** 
  Guides Paginations JS Start
