@@ -85,79 +85,165 @@ add_action('wp_ajax_nopriv_works_pagination', 'works_pagination');
 add_action('wp_ajax_works_pagination', 'works_pagination');
 
 
-/* For The Paginations */
+/* Products Rendering Functions */
 
-function renderGuidesHtml($page = 1)
+function renderProductHtml($page = 1, $currentPageID = null, $productCategoryFilter = null, $productTypeFilter = null, $sortOrderFilter = 'a-z')
 {
 
-    $ResourcePageID   = get_page_by_title('Resources')->ID;
-    $guiesPostPerPage = (get_field('guides_post_per_page', $ResourcePageID)) ? get_field('guides_post_per_page', $ResourcePageID) : 6;
+	$itemsPerPage = (get_field('items_per_page', $currentPageID)) ? get_field('items_per_page', $currentPageID) : 6;
+	$productCatalogTitle = get_field('product_catalog_title', $currentPageID);
 
-    $GuidesArgs = [
-        'post_type'        => 'guide',
-        'posts_per_page'   => $guiesPostPerPage,
-        'post_status'      => 'publish',
-        'orderby'          => 'date',
-        'order'            => 'DESC',
-        'paged'            => $page,
-        'suppress_filters' => true
-    ];
+	$args = [
+		'post_type'        => 'product',
+		'posts_per_page'   => $itemsPerPage,
+		'post_status'      => 'publish',
+		'paged'            => $page,
+	];
 
-    $GuidesQuery = new WP_Query($GuidesArgs);
+	if ($sortOrderFilter == 'desc' || $sortOrderFilter == 'asc') {
+		$args['orderby'] = 'date';
+		$args['order'] = $sortOrderFilter;
+	} elseif ($sortOrderFilter == 'z-a') {
+		$args['orderby'] = 'title';
+		$args['order'] = 'DESC';
+	} else {
+		$args['orderby'] = 'title';
+		$args['order'] = 'ASC';
+	}
 
-    ob_start();
+	$taxQuery = [];
+	if (!empty($productCategoryFilter)) {
+		$taxQuery[] = [
+			'taxonomy' => 'product_category',
+			'field'    => 'slug',
+			'terms'    => $productCategoryFilter,
+			'operator' => 'AND'
+		];
+	}
 
-    if ($GuidesQuery->have_posts()) {
-        echo '<div class="custom-grid-layout">';
-        while ($GuidesQuery->have_posts()) {
-            $GuidesQuery->the_post(); ?>
-            <div class="remove-guide-list">
-                <div class="guides__box">
-                    <img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), '247x289'); ?>" alt="guide-featured-image">
-                    <a href="<?php echo get_the_permalink(get_the_ID()) ?>">
-                        <?php if (strlen(get_the_title(get_the_ID())) > 65) {
-                            echo '<h3>' . substr(get_the_title(get_the_ID()), 0, 65) . '...</h3>';
-                        } else {
-                            echo '<h3>' . substr(get_the_title(get_the_ID()), 0, 65) . '</h3>';
-                        } ?>
-                    </a>
-                    <a href="<?php echo get_the_permalink(get_the_ID()) ?>" class="btn">Download</a>
-                </div>
-            </div>
-            <?php
-        }
-        echo '</div>';
-        echo '<div class="guides-list-loader" style="display:none; text-align: center;"><img src="' . get_template_directory_uri() . '/assets/images/Infinity-loder.svg" alt=""></div>';
-        if ($GuidesQuery->max_num_pages > 1) { ?>
-            <ul class="guides-pagination-group">
-                <?php for ($i = 1; $i <= $GuidesQuery->max_num_pages; $i++) {
-                    $activeClass = $i == $page ? 'active' : '';
-                    echo '<li class="guides-pagination ' . $activeClass . '"><a href="javascript:void(0)" data-page="' . $i . '">' . $i . '</a></li>';
-                } ?>
-            </ul>
-            <?php
-        }
-        wp_reset_postdata();
-    } else {
-        echo '<h3 class="guides-no-found" style=" text-align:center; padding: 82.5px 0;">No Guides Found.</h3>';
-        echo '<div class="guides-list-loader" style="display:none; text-align: center;"><img src="' . get_template_directory_uri() . '/assets/images/Infinity-loder.svg" alt=""></div>';
-    }
-    $data = ob_get_clean();
-    return $data;
+	if (!empty($productTypeFilter)) {
+		$taxQuery[] = [
+			'taxonomy' => 'product_type',
+			'field'    => 'slug',
+			'terms'    => $productTypeFilter,
+			'operator' => 'AND'
+		];
+	}
+
+	if ($taxQuery && count($taxQuery) > 0) {
+		$args['tax_query'] = $taxQuery;
+	}
+
+	$productQuery = new WP_Query($args);
+
+	$endNumberOfProduct = $itemsPerPage * $page;
+	$startNumberOfProduct = $endNumberOfProduct - $itemsPerPage + 1;
+	$totalProducts = $productQuery->found_posts;
+	$endNumberOfProduct   = ($totalProducts < $endNumberOfProduct) ? $totalProducts : $endNumberOfProduct;
+
+	ob_start(); ?>
+
+	<input type="hidden" name="currentPageID" value="<?php echo $currentPageID; ?>">
+	<div class="col-12">
+		<?php if ($productCatalogTitle) : ?>
+			<div class="text-center">
+				<h2><?php echo $productCatalogTitle; ?></h2>
+			</div>
+		<?php endif; ?>
+		<div class="product-top-bar" id="product-top-bar">
+			<div class="text">
+				<h4>All Products</h4>
+				<p>Showing <span><?php echo $startNumberOfProduct; ?> to <?php echo $endNumberOfProduct; ?></span> of <?php echo $totalProducts; ?></p>
+			</div>
+			<div class="sort">
+				<?php $productCategoryArray = get_terms(array(
+					'taxonomy' => 'product_category',
+					'hide_empty' => false
+				));
+				if ($productCategoryArray && is_array($productCategoryArray) && count($productCategoryArray) > 0) : ?>
+					<select class="product_category_filter">
+						<option value="" <?php echo $productCategoryFilter == '' ? 'selected' : ''; ?>>Select Product Category</option>
+						<?php foreach ($productCategoryArray as $productCategory) : ?>
+							<option value="<?php echo $productCategory->slug; ?>" <?php echo $productCategoryFilter == $productCategory->slug ? 'selected' : ''; ?>><?php echo $productCategory->name; ?></option>
+						<?php endforeach; ?>
+					</select>
+				<?php endif; ?>
+				<?php $productTypesArray = $productCategoryArray = get_terms(array(
+					'taxonomy' => 'product_type',
+					'hide_empty' => false
+				));
+				if ($productTypesArray && is_array($productTypesArray) && count($productTypesArray) > 0) : ?>
+					<select class="product_type_filter">
+						<option value="" <?php echo $productTypeFilter == '' ? 'selected' : ''; ?>>Select Product Type</option>
+						<?php foreach ($productTypesArray as $productType) : ?>
+							<option value="<?php echo $productType->slug; ?>" <?php echo $productTypeFilter == $productType->slug ? 'selected' : ''; ?>><?php echo $productType->name; ?></option>
+						<?php endforeach; ?>
+					</select>
+				<?php endif; ?>
+				<div>
+					<span>Sort by</span>
+					<select class="sort_order_filter">
+						<option value="a-z" <?php echo $sortOrderFilter == 'a-z' ? 'selected' : ''; ?>>A to Z</option>
+						<option value="z-a" <?php echo $sortOrderFilter == 'z-a' ? 'selected' : ''; ?>>Z to A</option>
+						<option value="asc" <?php echo $sortOrderFilter == 'asc' ? 'selected' : ''; ?>>Oldest</option>
+						<option value="desc" <?php echo $sortOrderFilter == 'desc' ? 'selected' : ''; ?>>Latest</option>
+					</select>
+				</div>
+				<?php $buttonDisabledArribute = ($productCategoryFilter || $productTypeFilter || $sortOrderFilter != 'a-z') ? '' : 'disabled'; ?>
+				<button class='resetFilter' <?php echo $buttonDisabledArribute; ?>>Reset All</button>
+			</div>
+		</div>
+	</div>
+	<?php if ($productQuery->have_posts()) :
+		while ($productQuery->have_posts()) {
+			$productQuery->the_post();
+			set_query_var('productID', get_the_ID());
+			get_template_part('parts/common/product-card');
+		}
+		echo '<div class="ajax-loader" style="display: none; position:relative; text-align: center; margin: 10rem 0;"><div class="loader">Loading...</div></div>';
+		if ($productQuery->max_num_pages > 1) : ?>
+
+			<div class="col-12">
+				<ul class="pagination-list product-pagination">
+					<?php if (($page - 1) >= 1) {
+						echo '<li class="left-arrow"><a href="javascript:void(0)" data-page="' . $page - 1 . '"><img src="' . get_template_directory_uri() . '/assets/images/arrow-yellow.svg" alt="arrow-yellow"></a></li>';
+					} ?>
+					<?php for ($i = 1; $i <= $productQuery->max_num_pages; $i++) {
+						$activeClass = $i == $page ? 'active' : '';
+						echo '<li class="page ' . $activeClass . '"><a href="javascript:void(0)" data-page="' . $i . '">' . $i . '</a></li>';
+					} ?>
+					<?php if (($page + 1) <= $productQuery->max_num_pages) {
+						echo '<li class="right-arrow"><a href="javascript:void(0)" data-page="' . $page + 1 . '"><img src="' . get_template_directory_uri() . '/assets/images/arrow-yellow.svg" alt="arrow-yellow"></a></li>';
+					} ?>
+				</ul>
+			</div>
+<?php
+		endif;
+		wp_reset_postdata();
+	else :
+		echo '<h3 class="no-found" style=" text-align:center; padding: 82.5px 0;">No Product Found.</h3>';
+		echo '<div class="ajax-loader" style="display: none; position:relative; text-align: center; margin: 10rem 0;"><div class="loader">Loading...</div></div>';
+	endif;
+	$data = ob_get_clean();
+	return $data;
 }
 
 /**
  * Guides Pagination
  */
-function guides_pagination()
+function product_pagination()
 {
-    $page = (isset($_POST["page"])) ? $_POST["page"] : 1;
-    $data = renderGuidesHtml($page);
-    echo json_encode(array('guidesHtml' => $data));
-    die();
+	$page = (!empty($_POST["page"])) ? $_POST["page"] : 1;
+	$currentPageId = (!empty($_POST["currentPageId"])) ? $_POST["currentPageId"] : null;
+	$productCategoryFilter = (!empty($_POST["productCategoryFilter"])) ? $_POST["productCategoryFilter"] : '';
+	$productTypeFilter = (!empty($_POST["productTypeFilter"])) ? $_POST["productTypeFilter"] : '';
+	$sortOrderFilter = (!empty($_POST["sortOrderFilter"])) ? $_POST["sortOrderFilter"] : 'a-z';
+	$data = renderProductHtml($page, $currentPageId, $productCategoryFilter, $productTypeFilter, $sortOrderFilter);
+	echo json_encode(array('productHtml' => $data));
+	die();
 }
 
-add_action('wp_ajax_nopriv_guides_pagination', 'guides_pagination');
-add_action('wp_ajax_guides_pagination', 'guides_pagination');
+add_action('wp_ajax_nopriv_product_pagination', 'product_pagination');
+add_action('wp_ajax_product_pagination', 'product_pagination');
 
 ?>
