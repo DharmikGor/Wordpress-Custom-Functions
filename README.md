@@ -22,6 +22,7 @@
 
 11. Add a custom link to the end of a specific menu that uses the wp_nav_menu() function 
 
+12. Get Inline Svg Code From SVG Url 
 
 
 

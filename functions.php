@@ -1,7 +1,7 @@
 <?php
 
 /**********************************************************************************
- Set Default Featured Image For Post Type Post If Featured Image Not Available
+ 1. Set Default Featured Image For Post Type Post If Featured Image Not Available
 ***********************************************************************************/
 
 function set_default_featured_image()
@@ -27,7 +27,7 @@ add_action('future_to_publish', 'set_default_featured_image');
 
 
 /*************************************
- Trim Content By Character Count
+ 2. Trim Content By Character Count
 **************************************/
 
 function trim_content($excerpt, $maxCharacter = '50', $htmlTag = '', $print = true)
@@ -60,7 +60,7 @@ function trim_content($excerpt, $maxCharacter = '50', $htmlTag = '', $print = tr
 
 
 /****************************
- Add SVG upload support
+ 3. Add SVG upload support
 *****************************/
 
 function add_svg_to_upload_mimes($uploadMimes)
@@ -75,7 +75,7 @@ add_filter('upload_mimes', 'add_svg_to_upload_mimes');
 
 
 /******************************************
- Pre Print Pre Function For Debugging
+ 4. Pre Print Pre Function For Debugging
 *******************************************/
 
 function pre_print_pre($data, $exit = false)
@@ -91,7 +91,7 @@ function pre_print_pre($data, $exit = false)
 
 
 /***************************************
- Contact Form 7 Auto p Tag Disabled
+ 5. Contact Form 7 Auto p Tag Disabled
 *****************************************/
 
 add_filter('wpcf7_autop_or_not', '__return_false');
@@ -99,7 +99,7 @@ add_filter('wpcf7_autop_or_not', '__return_false');
 
 
 /********************************
- Custom Pagination With Mid Size
+ 6. Custom Pagination With Mid Size
 *********************************/
 
 $totalPages = intval($publicationsQuery->max_num_pages);
@@ -142,7 +142,7 @@ if ($paged < $publicationsQuery->max_num_pages) {
 
 
 /****************************
- Custom Structure BreadCrumbs
+ 7. Custom Structure BreadCrumbs
 *****************************/
 
 function get_breadcrumb()
@@ -209,7 +209,7 @@ function get_breadcrumb()
 
 
 /****************************
- Dynamic Reading Time
+ 8. Dynamic Reading Time
 *****************************/
 
 function get_reading_time($post_id)
@@ -229,7 +229,7 @@ function get_reading_time($post_id)
 
 
 /************************************
- Set Post View Count For Trending Posts 
+ 9. Set Post View Count For Trending Posts 
 *************************************/
 
 function setPostViews($postID)
@@ -249,7 +249,7 @@ function setPostViews($postID)
 
 
 /************************************
- Get Youtube Video Thumbnail From Url 
+ 10. Get Youtube Video Thumbnail From Url 
 *************************************/
 
 function get_video_thumbnail($src)
@@ -291,7 +291,7 @@ function get_video_thumbnail($src)
 
 
 /*************************************************************************************
- Add a custom link to the end of a specific menu that uses the wp_nav_menu() function
+ 11. Add a custom link to the end of a specific menu that uses the wp_nav_menu() function
  *************************************************************************************/
 
 function add_custom_menu_link($items, $args)
@@ -302,3 +302,24 @@ function add_custom_menu_link($items, $args)
     return $items;
 }
 add_filter('wp_nav_menu_items', 'add_custom_menu_link', 10, 2);
+
+
+/*******************************
+ 12. Get Inline Svg Code From SVG Url
+ *******************************/
+
+function getInlineImage($url)
+{
+    $fileExtension = pathinfo($url, PATHINFO_EXTENSION);
+    if (strtolower($fileExtension) === 'svg') {
+        $svg_content = wp_remote_get($url);
+        pre_print_pre($svg_content);
+        if (is_array($svg_content) && !is_wp_error($svg_content) && $svg_content['response']['code'] == 200) {
+            echo $svg_content['body'];
+        } else {
+            echo 'Failed to fetch SVG from the provided URL.';
+        }
+    } else {
+        echo '<img src="' . esc_url($url) . '" alt="Image">';
+    }
+}
