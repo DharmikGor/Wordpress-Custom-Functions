@@ -313,7 +313,6 @@ function getInlineImage($url)
     $fileExtension = pathinfo($url, PATHINFO_EXTENSION);
     if (strtolower($fileExtension) === 'svg') {
         $svg_content = wp_remote_get($url);
-        pre_print_pre($svg_content);
         if (is_array($svg_content) && !is_wp_error($svg_content) && $svg_content['response']['code'] == 200) {
             echo $svg_content['body'];
         } else {
