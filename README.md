@@ -24,6 +24,7 @@
 
 12. Get Inline Svg Code From SVG Url 
 
+13. Add Sanitize and Formate Phone Number
 
 
 # Wordpress Template Functions.

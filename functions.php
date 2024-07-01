@@ -2,7 +2,7 @@
 
 /**********************************************************************************
  1. Set Default Featured Image For Post Type Post If Featured Image Not Available
-***********************************************************************************/
+ ***********************************************************************************/
 
 function set_default_featured_image()
 {
@@ -28,7 +28,7 @@ add_action('future_to_publish', 'set_default_featured_image');
 
 /*************************************
  2. Trim Content By Character Count
-**************************************/
+ **************************************/
 
 function trim_content($excerpt, $maxCharacter = '50', $htmlTag = '', $print = true)
 {
@@ -61,7 +61,7 @@ function trim_content($excerpt, $maxCharacter = '50', $htmlTag = '', $print = tr
 
 /****************************
  3. Add SVG upload support
-*****************************/
+ *****************************/
 
 function add_svg_to_upload_mimes($uploadMimes)
 {
@@ -76,7 +76,7 @@ add_filter('upload_mimes', 'add_svg_to_upload_mimes');
 
 /******************************************
  4. Pre Print Pre Function For Debugging
-*******************************************/
+ *******************************************/
 
 function pre_print_pre($data, $exit = false)
 {
@@ -92,7 +92,7 @@ function pre_print_pre($data, $exit = false)
 
 /***************************************
  5. Contact Form 7 Auto p Tag Disabled
-*****************************************/
+ *****************************************/
 
 add_filter('wpcf7_autop_or_not', '__return_false');
 
@@ -100,7 +100,7 @@ add_filter('wpcf7_autop_or_not', '__return_false');
 
 /********************************
  6. Custom Pagination With Mid Size
-*********************************/
+ *********************************/
 
 $totalPages = intval($publicationsQuery->max_num_pages);
 $links      = [];
@@ -143,7 +143,7 @@ if ($paged < $publicationsQuery->max_num_pages) {
 
 /****************************
  7. Custom Structure BreadCrumbs
-*****************************/
+ *****************************/
 
 function get_breadcrumb()
 {
@@ -186,10 +186,10 @@ function get_breadcrumb()
     }
 
 
-    if ($breadcrumbItems && is_array($breadcrumbItems) && count($breadcrumbItems) > 0):
+    if ($breadcrumbItems && is_array($breadcrumbItems) && count($breadcrumbItems) > 0) :
         $html    = '<ol class="breadcrumb">';
         $counter = 1;
-        foreach ($breadcrumbItems as $item):
+        foreach ($breadcrumbItems as $item) :
             $activeClass = ($counter == count($breadcrumbItems)) ? ' active' : '';
             $html .= '<li class="breadcrumb-item' . $activeClass . '">';
             if ($item['url']) {
@@ -210,7 +210,7 @@ function get_breadcrumb()
 
 /****************************
  8. Dynamic Reading Time
-*****************************/
+ *****************************/
 
 function get_reading_time($post_id)
 {
@@ -230,7 +230,7 @@ function get_reading_time($post_id)
 
 /************************************
  9. Set Post View Count For Trending Posts 
-*************************************/
+ *************************************/
 
 function setPostViews($postID)
 {
@@ -250,7 +250,7 @@ function setPostViews($postID)
 
 /************************************
  10. Get Youtube Video Thumbnail From Url 
-*************************************/
+ *************************************/
 
 function get_video_thumbnail($src)
 {
@@ -321,4 +321,27 @@ function getInlineImage($url)
     } else {
         echo '<img src="' . esc_url($url) . '" alt="Image">';
     }
+}
+
+/*******************************
+ 13. Add Sanitize and Formate Phone Number
+ *******************************/
+function sanitize_and_format_phone_number($phone)
+{
+    // Remove all characters except digits
+    $phone = preg_replace('/[^0-9]/', '', $phone);
+
+    // Check if the phone number is valid
+    if (strlen($phone) == 10) {
+        // Format as (123) 456-7890
+        $formatted_phone = preg_replace('/(\d{3})(\d{3})(\d{4})/', '($1) $2-$3', $phone);
+    } elseif (strlen($phone) == 11 && substr($phone, 0, 1) == '1') {
+        // Format as 1 (234) 567-8901 for 11 digits starting with 1
+        $formatted_phone = preg_replace('/1(\d{3})(\d{3})(\d{4})/', '1 ($1) $2-$3', $phone);
+    } else {
+        // Invalid phone number
+        $formatted_phone = $phone;
+    }
+
+    return $formatted_phone;
 }
